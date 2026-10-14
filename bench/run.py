@@ -81,7 +81,30 @@ def server_cmd(a, out):
     return cmd
 
 
+def _port_in_use(port):
+    import socket
+    with socket.socket() as s:
+        s.settimeout(1)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def acquire_lock():
+    """Only one benchmark may run per machine: two replays against one server
+    would mix their traffic and metrics (and corrupt result files)."""
+    import fcntl
+    fh = open("/tmp/kvbench.lock", "w")
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit("ERROR: another bench/run.py is already running on this machine. "
+                         "Stop it first (pkill -f bench/run.py; pkill -f 'vllm serve').")
+    return fh
+
+
 def start_server(a, out):
+    if _port_in_use(a.port):
+        raise SystemExit(f"ERROR: port {a.port} is already in use (a vLLM server from another run?). "
+                         "Stop it first: pkill -f 'vllm serve'")
     env = dict(os.environ, PYTHONPATH=ROOT + os.pathsep + os.environ.get("PYTHONPATH", ""),
                KVPOLICY_LOG=os.path.join(out, "policy.log"))
     cmd = server_cmd(a, out)
@@ -179,9 +202,11 @@ async def replay(a, reqs, out):
             if i % 500 == 0:
                 print(f"  sent {i}/{len(reqs)}  elapsed {loop.time()-start:.0f}s", flush=True)
         await asyncio.gather(*tasks)
-    with open(os.path.join(out, "requests.jsonl"), "w") as f:
+    tmp = os.path.join(out, "requests.jsonl.tmp")
+    with open(tmp, "w") as f:
         for x in results:
             f.write(json.dumps(x) + "\n")
+    os.replace(tmp, os.path.join(out, "requests.jsonl"))  # atomic: never a half-written file
     return results
 
 
@@ -239,11 +264,14 @@ def main():
     for f in ("policy.log",):
         if os.path.exists(os.path.join(out, f)):
             os.remove(os.path.join(out, f))
+    _lock = acquire_lock()  # noqa: F841  (held until the process exits)
     reqs = prepare(a.trace, a.sample_k, a.max_prompt)
     if a.limit:
         reqs = reqs[: a.limit]
     print(f"[run] {name}: {stats(reqs)}  speedup={a.speedup}", flush=True)
     p = start_server(a, out)
+    if p.poll() is not None:
+        raise RuntimeError("vLLM server exited right after becoming healthy; see server.log")
     try:
         m0 = scrape(a.port)
         t0 = time.time()
