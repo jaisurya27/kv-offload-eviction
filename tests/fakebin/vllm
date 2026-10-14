@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# fake `vllm serve MODEL --port P ...`: emulate the policy probe's init line, launch fake server
+port=8000; prev=""; tier=""
+for a in "$@"; do [ "$prev" = "--port" ] && port=$a; [ "$prev" = "--kv-transfer-config" ] && tier=$a; prev=$a; done
+if [ -n "$tier" ] && [ -n "$KVPOLICY_LOG" ]; then
+  pol=$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['kv_connector_extra_config']['eviction_policy'])" "$tier")
+  echo "{\"event\": \"init\", \"policy\": \"$pol\", \"capacity_chunks\": 500}" >> "$KVPOLICY_LOG"
+fi
+exec python3 "$(dirname "$0")/../fake_vllm.py" "$port"

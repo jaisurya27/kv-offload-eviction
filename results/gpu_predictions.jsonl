@@ -1,0 +1,4 @@
+{"trace": "conversation_trace.jsonl", "cpu_chunks": 500, "requests": 2887, "duration_s": 3536.999, "prompt_tokens": 29846390, "lru": 0.066, "arc": 0.066, "adm2": 0.1067, "dip": 0.1196, "pg": 0.1199, "oracle": 0.2522}
+{"trace": "conversation_trace.jsonl", "cpu_chunks": 1000, "requests": 2887, "duration_s": 3536.999, "prompt_tokens": 29846390, "lru": 0.111, "arc": 0.111, "adm2": 0.1685, "dip": 0.1652, "pg": 0.1654, "oracle": 0.3278}
+{"trace": "toolagent_trace.jsonl", "cpu_chunks": 500, "requests": 5810, "duration_s": 3536.999, "prompt_tokens": 45793907, "lru": 0.3965, "arc": 0.3965, "adm2": 0.4283, "dip": 0.4327, "pg": 0.4334, "oracle": 0.522}
+{"trace": "toolagent_trace.jsonl", "cpu_chunks": 1000, "requests": 5810, "duration_s": 3536.999, "prompt_tokens": 45793907, "lru": 0.4362, "arc": 0.4362, "adm2": 0.4644, "dip": 0.4627, "pg": 0.4634, "oracle": 0.57}
