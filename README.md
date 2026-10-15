@@ -6,6 +6,22 @@ using **public production traces** (Mooncake/Kimi, FAST'25) and **vLLM 0.30's re
 offload code**, and contributes **DIP-KV**, an adaptive-admission policy that plugs into
 vLLM through its official out-of-tree `CachePolicy` hook (no fork).
 
+## TL;DR
+
+On real vLLM (A100) replaying Kimi production traces, **DIP-KV cut TTFT vs vLLM's default LRU
+by 40% at p50 / 25% at p95 on agentic traffic, and 15% / 13% on chat**, by raising the prefix-cache
+hit rate from 39.6% to 43.6% and from 6.6% to 12.7%.
+
+![TTFT CDF per policy, measured on A100](results/gpu/final_ttft_cdf.png)
+
+| Measured on A100 | Chat: LRU → DIP-KV | Tool-agent: LRU → DIP-KV |
+|---|---|---|
+| Prefix-cache hit rate | 6.6% → **12.7%** | 39.6% → **43.6%** |
+| p50 TTFT | 806 → **686 ms** | 2,023 → **1,209 ms** |
+| p95 TTFT | 2,979 → **2,591 ms** | 6,083 → **4,550 ms** |
+
+Full per-run numbers: [`results/gpu/final_results.csv`](results/gpu/final_results.csv). Setup and caveats are [below](#measured-on-a-real-gpu-vllm-030-a100-80gb).
+
 ## Key findings
 
 1. **On a single GPU's KV cache, the eviction policy barely matters.** At HBM-scale
@@ -72,7 +88,7 @@ Prometheus counters, and per-request `cached_tokens` agrees.
 * Setup caveats: 1.5B model on a single GPU; 1/4 session sample with CPU capacity scaled by 1/4
   (offline check: hit-rate curves are preserved); prompts truncated to 30k tokens (prefix kept);
   outputs capped at 64 tokens; token contents synthetic (the traces publish block hashes only), with
-  the real sharing structure. Raw per-request results: `results/gpu/`.
+  the real sharing structure. Per-run results: `results/gpu/final_results.csv`.
 
 ## Layout
 ```
