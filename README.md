@@ -6,7 +6,7 @@ using **public production traces** (Mooncake/Kimi, FAST'25) and **vLLM 0.30's re
 offload code**, and contributes **DIP-KV**, an adaptive-admission policy that plugs into
 vLLM through its official out-of-tree `CachePolicy` hook (no fork).
 
-## Key findings (offline, exact replay; GPU latency runs pending)
+## Key findings
 
 1. **On a single GPU's KV cache, the eviction policy barely matters.** At HBM-scale
    capacity, LRU, LFU and cost-aware GDSF give identical hit rates on all traces, because
@@ -43,6 +43,37 @@ trail LRU by up to ~2 points (adaptive switch noise on a short trace); see the C
 real `CPUOffloadingManager`. All policies match the simulator within 0.15 points, and four
 decimals for vLLM's own LRU, ARC and admission.
 
+## Measured on a real GPU (vLLM 0.30, A100-80GB)
+
+Qwen2.5-1.5B-Instruct served by `vllm serve` with the `OffloadingConnector` CPU tier (500 chunks
+of 512 tokens, about 7.3 GB of pinned host memory), with a deliberately small GPU KV pool (~98k tokens).
+Each trace is replayed **open-loop at its real arrival pattern** (1/4 session sample, time-compressed
+by a speed chosen by calibration). Every policy sees identical traffic. The hit rate comes from vLLM's own
+Prometheus counters, and per-request `cached_tokens` agrees.
+
+| | Chat (moderate load) | Tool-agent (high load) |
+|---|---|---|
+| Prefix hit rate, LRU → **DIP-KV** | 6.6% → **12.7%** | 39.6% → **43.6%** |
+| CPU-tier hits, LRU → DIP-KV | 1.4% → 7.5% (**5.4×**) | 4.7% → 8.5% (**1.8×**) |
+| p50 TTFT vs vLLM LRU | 806 → **686 ms (−15%)** | 2,023 → **1,209 ms (−40%)** |
+| p95 TTFT vs vLLM LRU | 2,979 → **2,591 ms (−13%)** | 6,083 → **4,550 ms (−25%)** |
+| p95 TTFT vs vLLM `store_threshold=2` | −4.5% | −3.0% |
+| p95 TTFT vs GPU-only prefix cache | −12% | −58% |
+| Simulator-predicted vs measured hit rate | within 0.7 pts | within 0.4 pts |
+
+* **With vLLM's default LRU, the CPU tier barely helps chat traffic** (+1.4 pts hit rate, same
+  latency as GPU-only). DIP-KV makes the same tier 5.4× more productive.
+* **Latency gains grow with load.** Tool-agent ran near saturation: TTFT drifted upward over the
+  run for GPU-only (2.7 s → 9.2 s median, first vs last 10%) and slightly for LRU (1.4 → 2.1 s),
+  while DIP-KV stayed flat (1.1 → 1.3 s). Near capacity, the prefill work a better cache saves
+  also shortens every queue behind it.
+* With no prefix caching at all, tool-agent at this load does not keep up (p50 TTFT 133 s).
+* Failed requests were at most 0.2% per run (≤10 of 5,810), all under peak load.
+* Setup caveats: 1.5B model on a single GPU; 1/4 session sample with CPU capacity scaled by 1/4
+  (offline check: hit-rate curves are preserved); prompts truncated to 30k tokens (prefix kept);
+  outputs capped at 64 tokens; token contents synthetic (the traces publish block hashes only), with
+  the real sharing structure. Raw per-request results: `results/gpu/`.
+
 ## Layout
 ```
 kvpolicy/      vLLM CachePolicy plugins: dip.py (DIP-KV, PG ablation), lhd.py, probe.py (logging)
@@ -69,5 +100,6 @@ PYTHONPATH=. vllm serve <model> --kv-transfer-config '{"kv_connector":"Offloadin
 
 ## Status
 - [x] Trace analysis, simulators, policies, validation against vLLM's real offload manager
-- [ ] GPU runs (TTFT p50/p95 + measured hit rate): `colab/kv_offload_benchmark.ipynb`
+- [x] GPU runs (TTFT p50/p95 + measured hit rate): `colab/kv_offload_benchmark.ipynb`
+- [ ] Confirmation run on a 7B model
 - [ ] Report the ARC/re-touch interaction upstream (vLLM issue)

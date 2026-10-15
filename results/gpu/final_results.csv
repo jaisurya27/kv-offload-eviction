@@ -1,0 +1,10 @@
+trace,config,run,ok,err,p50_ms,p95_ms,p99_ms,hit_gpu,hit_cpu,hit_total,hit_sim,first10_s,last10_s,p50_vs_lru_%,p95_vs_lru_%
+conversation,gpu,conversation_gpu_c500_x2.62,2882,5,812,2955,4263,0.052,0.0,0.052,,0.71,1.02,-0.7,0.8
+conversation,lru,conversation_lru_c500_x2.62,2886,1,806,2979,4310,0.052,0.014,0.066,0.066,0.66,1.12,0.0,0.0
+conversation,adm2,conversation_adm2_c500_x2.62,2886,1,711,2714,3879,0.052,0.056,0.107,0.1067,0.66,0.96,11.8,8.9
+conversation,dip,conversation_dip_c500_x2.62,2886,1,686,2591,3693,0.052,0.075,0.127,0.1196,0.62,0.92,14.9,13.0
+toolagent,nocache,toolagent_nocache_c500_x3.416,5810,0,133064,284899,296475,0.0,0.0,0.0,,13.67,284.9,-6477.6,-4583.5
+toolagent,gpu,toolagent_gpu_c500_x3.416,5800,10,3532,10839,12357,0.345,0.0,0.345,,2.65,9.23,-74.6,-78.2
+toolagent,lru,toolagent_lru_c500_x3.416,5809,1,2023,6083,8130,0.349,0.047,0.396,0.3965,1.35,2.1,0.0,0.0
+toolagent,adm2,toolagent_adm2_c500_x3.416,5808,2,1386,4690,6463,0.351,0.077,0.427,0.4283,1.16,1.47,31.5,22.9
+toolagent,dip,toolagent_dip_c500_x3.416,5810,0,1209,4550,6001,0.351,0.085,0.436,0.4327,1.07,1.25,40.2,25.2
