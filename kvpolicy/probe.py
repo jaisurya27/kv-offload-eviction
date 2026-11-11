@@ -13,6 +13,7 @@ from vllm.v1.kv_offload.cpu.policies.lru import LRUCachePolicy
 
 from kvpolicy.dip import DIPCachePolicy, PGCachePolicy
 from kvpolicy.lhd import LHDCachePolicy
+from kvpolicy.arc_fix import TextbookARCCachePolicy
 
 EVERY = 2000
 
@@ -62,3 +63,4 @@ ARCProbe = _probe(ARCCachePolicy, "ARCProbe")
 DIPProbe = _probe(DIPCachePolicy, "DIPProbe")
 PGProbe = _probe(PGCachePolicy, "PGProbe")
 LHDProbe = _probe(LHDCachePolicy, "LHDProbe")
+ARCFixProbe = _probe(TextbookARCCachePolicy, "ARCFixProbe")

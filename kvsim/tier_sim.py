@@ -18,6 +18,7 @@ from vllm.v1.kv_offload.cpu.policies.base import ChunkStatus, CachePolicy
 from vllm.v1.kv_offload.cpu.policies.lru import LRUCachePolicy
 from vllm.v1.kv_offload.cpu.policies.arc import ARCCachePolicy
 from kvpolicy.lhd import LHDCachePolicy
+from kvpolicy.arc_fix import TextbookARCCachePolicy
 from kvpolicy.dip import PGCachePolicy, DIPCachePolicy
 
 BLOCK = 512
@@ -129,6 +130,7 @@ def make(name, cap, reqs):
     if name == "arc": return ARCCachePolicy(cap), 0
     if name == "lru+adm2": return LRUCachePolicy(cap), 2
     if name == "lhd": return LHDCachePolicy(cap), 0
+    if name == "arcfix": return TextbookARCCachePolicy(cap), 0
     if name == "pg": return PGCachePolicy(cap), 0
     if name == "dip": return DIPCachePolicy(cap), 0
     if name == "belady":

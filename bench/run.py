@@ -13,6 +13,7 @@ Configs (--config):
   dip       + CPU offload tier, DIP-KV (ours)              (DIPProbe)
   pg        + CPU offload tier, probation+ghost (ablation) (PGProbe)
   lhd       + CPU offload tier, prefix-aware LHD (ours)    (LHDProbe)
+  arcfix    + CPU offload tier, vLLM ARC with textbook ghost-hit handling (ARCFixProbe)
 """
 import argparse, asyncio, json, math, os, re, signal, subprocess, sys, time
 
@@ -23,7 +24,8 @@ sys.path.insert(0, ROOT)
 from bench.prep import prepare, stats, BLOCK
 
 TIER = {"lru": ("LRUProbe", 0), "arc": ("ARCProbe", 0), "adm2": ("LRUProbe", 2),
-        "dip": ("DIPProbe", 0), "pg": ("PGProbe", 0), "lhd": ("LHDProbe", 0)}
+        "dip": ("DIPProbe", 0), "pg": ("PGProbe", 0), "lhd": ("LHDProbe", 0),
+        "arcfix": ("ARCFixProbe", 0)}
 METRICS = ["vllm:prefix_cache_queries", "vllm:prefix_cache_hits",
            "vllm:external_prefix_cache_queries", "vllm:external_prefix_cache_hits"]
 

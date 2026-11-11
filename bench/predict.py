@@ -11,7 +11,7 @@ except Exception:  # noqa: BLE001
 import kvsim.tier_sim as T
 from bench.prep import prepare, stats
 
-SIM = {"lru": "lru", "arc": "arc", "adm2": "lru+adm2", "dip": "dip", "pg": "pg", "lhd": "lhd",
+SIM = {"lru": "lru", "arc": "arc", "adm2": "lru+adm2", "dip": "dip", "pg": "pg", "lhd": "lhd", "arcfix": "arcfix",
        "oracle": "belady"}
 
 if __name__ == "__main__":
