@@ -5,7 +5,7 @@ Checks that:
      (eviction_policy + cache_policy_module_path),
   2. the manager's own invariants/assertions hold under our policies,
   3. hit rates match kvsim/tier_sim.py (so the simulator is faithful),
-  4. vLLM's ARC policy really collapses to LRU (T1 stays empty).
+  4. how vLLM's ARC splits chunks between T1 and T2 (printed for inspection).
 
 Run: VLLM_SITE=<site-packages of vllm 0.30> python tests/test_real_manager.py
 """
@@ -48,9 +48,9 @@ def replay(reqs, policy="lru", module=None, store_threshold=0, cap=1000):
             mgr.prepare_load(keys[:n], ctx)
             mgr.complete_load(keys[:n], ctx)
         out = mgr.prepare_store(keys[n:], ctx)
+        mgr.touch(keys, ctx)  # vLLM re-touches while the store is still in flight
         if out is not None and out.keys_to_store:
             mgr.complete_store(out.keys_to_store, ctx)
-        mgr.touch(keys, ctx)
         mgr.on_request_finished(ctx)
         hit_tok += min(n * BLOCK, L - 1)
         tot += L

@@ -115,10 +115,12 @@ def replay(reqs, policy, cap, store_threshold=0, max_tracker=64000):
             policy.insert(k, c)
             chunks.append((k, c))
             free -= 1
-        for k, c in chunks:             # complete_store: -1 -> 0, now evictable
+        # vLLM touches the request's keys again right after preparing the store,
+        # while the GPU->CPU copy is still in flight (chunks not ready yet) ...
+        policy.touch(keys, ctx)
+        for k, c in chunks:             # ... and the store completes later: -1 -> 0, evictable
             c.ref_cnt = 0
             policy.mark_evictable(k)
-        policy.touch(keys, ctx)
     return hit_tok / tot_tok
 
 
